@@ -19,16 +19,29 @@ var C = {
  *  class Enemy
  ********************/
 
-var Enemy = function() {
+var Enemy = function(row, speed) {
     this.sprite = 'images/enemy-bug.png';
+    this.step = C.TILE_W;
+    this.x = -100;
+    this.y = row * C.TILE_H + 55;
+    this.speed = speed;
+    this.width = C.TILE_W *.8;  // 80% original dimensions
+    this.height = C.TILE_H *.8;
 };
 
 Enemy.prototype.update = function(dt) {
-
+    if(this.x < this.step * 5){
+        this.x += this.speed * dt;
+    }
+    else{
+       this.x = -this.step;
+    }
 };
 
 Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y - this.height -10);
+    ctx.strokeStyle  = 'red';
+    ctx.strokeRect(this.x, this.y, this.width, this.height);
 };
 
 /********************
@@ -36,9 +49,9 @@ Enemy.prototype.render = function() {
  ********************/
 
 var Player = function () {
-    this.width = 101;
-    this.height = 73;
-    this.x = C.START_X;
+    this.width = C.TILE_W * 0.9;
+    this.height = C.TILE_H;
+    this.x = C.START_X + 10;
     this.y = C.START_Y;
     this.sprite = 'images/char-boy.png';
     this.stepX = C.TILE_W;
@@ -47,10 +60,10 @@ var Player = function () {
 }
 
 Player.prototype.update = function(dt) {
-};
+}; 
 
 Player.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y - this.height);
+    ctx.drawImage(Resources.get(this.sprite), this.x - 10, this.y - this.height + 25);
     ctx.strokeRect(this.x, this.y, this.width, this.height); // test borders
 };
 
@@ -122,5 +135,8 @@ document.addEventListener('keyup', function(e) {
 var Game = function () {
     player = new Player();
     allGems.push(new Gem('green', 100, 1), new Gem('orange', 200, 4));
+
+    // test enemies
+    allEnemies.push(new Enemy(1, 100));
 }
 Game();

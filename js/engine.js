@@ -163,23 +163,32 @@ var Engine = (function(global) {
 
     function checkCollisions() {
 		function collision(a, b) {
-		  return a.x < b.x + b.width &&  //left
-		         a.x + a.width > b.x + 40 &&  //right
-		         a.y < b.y + b.height &&  //above
-		         a.y + a.height > b.y;
+            return  a.x < b.x + b.width &&  //left
+                    a.x + a.width > b.x + 40 &&  //right
+                    a.y < b.y + b.height &&  //above
+                    a.y + a.height > b.y;
 		}
 
-  	allGems.forEach(function(gem) {
+        allEnemies.forEach(function(enemy) {
 
-    	if (collision(player, gem)) {
+			if (collision(player, enemy)) {
+				player.reset();
+				// ipdate player's hearts
+            }
 
-            // Update the score
-            // console.log("collide");
-            
-            gem.clear();
-    	}
+  	    });
 
-      });
+        allGems.forEach(function(gem) {
+
+            if (collision(player, gem)) {
+
+                // Update the score
+                // console.log("collide");
+                
+                gem.clear();
+            }
+
+        });
     }
 
     /* This function does nothing but it could have been a good place to
