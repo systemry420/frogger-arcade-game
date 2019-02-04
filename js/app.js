@@ -4,7 +4,8 @@
 var allEnemies = [],
     allGems = [],
     player,
-    a;
+    board,
+    level;
 
 
 // object of constants
@@ -56,11 +57,11 @@ var Player = function () {
     this.sprite = 'images/char-boy.png';
     this.stepX = C.TILE_W;
     this.stepY = C.TILE_H;
-    this.lives = 3;
+    this.hearts = 3;
 }
 
 Player.prototype.update = function(dt) {
-}; 
+};
 
 Player.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x - 10, this.y - this.height + 25);
@@ -88,6 +89,14 @@ Player.prototype.handleInput = function(input){
     }
 }
 
+Player.prototype.incHeart = function () {
+    this.hearts = this.hearts + 1;
+}
+
+Player.prototype.decHeart = function() {
+    this.hearts = this.hearts - 1;
+}
+
 // reset player position
 Player.prototype.reset = function() {
     this.x = C.START_X;
@@ -109,14 +118,107 @@ var Gem = function(color, points, row){
 }
 
 Gem.prototype.clear = function () {
-    this.x = -100;
-
+    this.x = -200; //create an illusion of acheiving the gem
+    board.addGem();
 }
 
 Gem.prototype.render = function () {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width, this.height);
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y -33, this.width, this.height+33);
     ctx.strokeStyle  = 'red';
     ctx.strokeRect(this.x, this.y, this.width, this.height);
+}
+
+/********************
+ *  class Board, handles the level, gems, hearts, and score
+ ********************/
+
+var Board = function () {
+    this.bLevel = 1;
+    this.bHearts = 3;
+    this.bScore = 0;
+    this.bGems = 0;
+};
+
+Board.prototype.render = function() {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0,50, 505, 45);
+    this.showLevel();
+    this.showScore();
+    this.showHearts();
+    this.showGems();
+};
+
+Board.prototype.showLevel = function() {
+    ctx.font = '1.4em courier';  //atari flavor :)
+    ctx.fillStyle = 'white';
+    ctx.fillText('Level: '+ this.bLevel, 15, 80);
+};
+
+Board.prototype.updateLevel = function(l) {
+    this.bLevel = l;
+};
+
+Board.prototype.showScore = function() {
+    ctx.font = '1.3em courier';
+    ctx.fillStyle = 'white';
+    ctx.fillText(this.bScore, 420, 80);
+};
+
+Board.prototype.updateScore = function(s) {
+    this.bScore = this.bScore + s;
+};
+
+Board.prototype.showHearts = function() {
+    ctx.drawImage(Resources.get('images/Heart.png'), 210, 45, 30,50);
+    ctx.fillStyle = 'white';
+    ctx.fillText('x'+ this.bHearts, 250, 80);
+};
+
+Board.prototype.updateHearts = function(h) {
+    this.bHearts = h;
+};
+
+Board.prototype.showGems = function() {
+    ctx.drawImage(Resources.get('images/gem-orange.png'), 310, 45, 25,40);
+    ctx.fillStyle = 'white';
+    ctx.fillText('x'+ this.bGems, 340, 80);
+};
+
+Board.prototype.addGem = function () {
+    this.bGems = this.bGems + 1;
+}
+
+Board.prototype.reset = function() {
+    this.bScore = 0;
+    this.bGems = 0;
+    this.bLevel = 1;
+    this.updateHearts(3);
+
+};
+
+var Level = function() {
+    this.level = 1;
+};
+
+Level.prototype.update = function() {
+
+    // Increase level when player reaches water, and reset him
+    this.level++;
+    player.reset();
+
+    // Update level on board, and add 500 bonus
+    board.updateLevel(this.level);
+    board.updateScore(500);
+}
+
+Level.prototype.reset = function() {
+
+    // Reset to level 1
+    board.reset();
+
+    // Reset player's position
+    player.reset();
+    this.level = 1;
 }
 
 
@@ -133,10 +235,13 @@ document.addEventListener('keyup', function(e) {
 
 // function to instantiate objects
 var Game = function () {
+    // draw logo
+    board = new Board();
+    level = new Level();
     player = new Player();
     allGems.push(new Gem('green', 100, 1), new Gem('orange', 200, 4));
 
     // test enemies
-    allEnemies.push(new Enemy(1, 100));
+    allEnemies.push(new Enemy(2, 200));
 }
 Game();

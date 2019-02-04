@@ -159,6 +159,8 @@ var Engine = (function(global) {
         });
 
         player.render();
+
+        board.render();
     }
 
     function checkCollisions() {
@@ -170,25 +172,38 @@ var Engine = (function(global) {
 		}
 
         allEnemies.forEach(function(enemy) {
-
 			if (collision(player, enemy)) {
 				player.reset();
-				// ipdate player's hearts
+                // update player's hearts
+
+                if(player.hearts > 1){
+                    console.log(player.hearts, board.bHearts);
+                    player.decHeart();
+                    board.updateHearts(player.hearts);
+
+                }
+                else{
+                    level.reset();
+                    player.hearts = 3;
+                    // stop entities, game over
+                }
             }
 
   	    });
 
         allGems.forEach(function(gem) {
-
             if (collision(player, gem)) {
-
-                // Update the score
+                // Update the score, gem, and clear
                 // console.log("collide");
-                
+                board.updateScore(gem.points);
                 gem.clear();
             }
-
         });
+
+        // player reaches water
+        if (player.y < 70) {
+            level.update();
+        }
     }
 
     /* This function does nothing but it could have been a good place to
@@ -211,7 +226,8 @@ var Engine = (function(global) {
         'images/char-boy.png',
         'images/gem-green.png',
         'images/gem-orange.png',
-        'images/gem-blue.png'
+        'images/gem-blue.png',
+        'images/Heart.png'
     ]);
     Resources.onReady(init);
 
