@@ -5,7 +5,8 @@ var allEnemies = [],
     allGems = [],
     player,
     board,
-    level;
+    level,
+    manager;
 
 
 // object of constants
@@ -15,6 +16,11 @@ var C = {
     START_X: 202,
     START_Y: 470
 };
+
+// helper function to return random integer
+function getRandom(min, max) {
+    return Math.floor(min + Math.random()*(max + 1 - min));
+}
 
 /********************
  *  class Enemy
@@ -209,6 +215,10 @@ Level.prototype.update = function() {
     // Update level on board, and add 500 bonus
     board.updateLevel(this.level);
     board.updateScore(500);
+
+    manager.spawnGems(getRandom(2, 4));
+    if(this.level % 3 == 0)
+        manager.spawnEnemies(1);
 }
 
 Level.prototype.reset = function() {
@@ -220,6 +230,46 @@ Level.prototype.reset = function() {
     player.reset();
     this.level = 1;
 }
+
+var Manager = function() {};
+
+Manager.prototype.spawnGems = function(total) {
+    // generate a gem with random position and color
+
+    var colors = ['blue', 'green', 'orange'];
+    var c, p;
+
+    for (var i = 0; i < total; i++) {
+        c = colors[getRandom(1,3) - 1] ;
+        switch(c){
+            case 'blue':
+                p = 300; break;
+            case 'green':
+                p = 200; break;
+            case 'orange':
+                p = 100; break;
+        }
+
+        allGems.push(new Gem(c, p, getRandom(1, 3)));
+    }
+};
+
+Manager.prototype.spawnEnemies = function (total) {
+    // generate an enemy with random position and speed
+    for (let i = 0; i < total; i++) {
+
+        var r = getRandom(1, 3);
+
+        var s = getRandom(50,300);
+
+        allEnemies.push(new Enemy(r, s));
+      }
+}
+
+Manager.prototype.resetEnemies = function () {
+    allEnemies = [];
+}
+
 
 
 document.addEventListener('keyup', function(e) {
@@ -239,9 +289,8 @@ var Game = function () {
     board = new Board();
     level = new Level();
     player = new Player();
-    allGems.push(new Gem('green', 100, 1), new Gem('orange', 200, 4));
-
-    // test enemies
-    allEnemies.push(new Enemy(2, 200));
+    manager = new Manager();
+    manager.spawnEnemies(1);
+    manager.spawnGems(2);
 }
 Game();
