@@ -24,8 +24,8 @@ var Engine = (function(global) {
         ctx = canvas.getContext('2d'),
         lastTime;
 
-    canvas.width = 505;
-    canvas.height = 606;
+    canvas.width = 606;
+    canvas.height = 650;
     doc.body.appendChild(canvas);
 
     /* This function serves as the kickoff point for the game loop itself
@@ -111,12 +111,13 @@ var Engine = (function(global) {
                 'images/water-block.png',   // Top row is water
                 'images/stone-block.png',   // Row 1 of 3 of stone
                 'images/stone-block.png',   // Row 2 of 3 of stone
+                'images/stone-block.png',   // Row 2 of 3 of stone
                 'images/stone-block.png',   // Row 3 of 3 of stone
                 'images/grass-block.png',   // Row 1 of 2 of grass
                 'images/grass-block.png'    // Row 2 of 2 of grass
             ],
-            numRows = 6,
-            numCols = 5,
+            numRows = 7,
+            numCols = 6,
             row, col;
 
         // Before drawing, clear existing canvas
@@ -161,6 +162,11 @@ var Engine = (function(global) {
         player.render();
 
         board.render();
+
+        heart.render();
+
+        key.render();
+
     }
 
     function checkCollisions() {
@@ -177,7 +183,6 @@ var Engine = (function(global) {
                 // update player's hearts
 
                 if(player.hearts > 1){
-                    console.log(player.hearts, board.bHearts);
                     player.decHeart();
                     board.updateHearts(player.hearts);
 
@@ -200,6 +205,22 @@ var Engine = (function(global) {
                 gem.clear();
             }
         });
+
+        if(collision(player, heart)){
+            // add a heart if there's less than 3 hearts
+            heart.x = -200;
+            if(player.hearts>=1 && player.hearts<3){
+                player.incHeart();
+                board.updateHearts(player.hearts);
+            }
+        }
+
+        if(collision(player, key)){
+            // the key will let the player jump over enemies
+            key.x = -200;
+            player.y = 138;
+        }
+
 
         // player reaches water
         if (player.y < 70) {
@@ -228,7 +249,9 @@ var Engine = (function(global) {
         'images/gem-green.png',
         'images/gem-orange.png',
         'images/gem-blue.png',
-        'images/Heart.png'
+        'images/Heart.png',
+        'images/Star.png',
+        'images/Key.png'
     ]);
     Resources.onReady(init);
 

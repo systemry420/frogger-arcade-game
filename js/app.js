@@ -7,6 +7,8 @@ var allEnemies = [],
     board,
     modal,
     level,
+    heart,
+    key,
     manager;
 
 
@@ -14,8 +16,8 @@ var allEnemies = [],
 var C = {
     TILE_W: 101,
     TILE_H: 83,
-    START_X: 202,
-    START_Y: 470
+    START_X: 303,
+    START_Y: 553
 };
 
 // helper function to return random integer
@@ -38,7 +40,8 @@ var Enemy = function(row, speed) {
 };
 
 Enemy.prototype.update = function(dt) {
-    if(this.x < this.step * 5){
+    // while the bug is on-canvas
+    if(this.x < this.step * 6){
         this.x += this.speed * dt;
     }
     else{
@@ -82,7 +85,7 @@ Player.prototype.handleInput = function(input){
                 this.y -= this.stepY;
             break;
         case 'down':
-            if(this.y < C.TILE_H * 5)
+            if(this.y < C.TILE_H * 6)
                 this.y += this.stepY;
             break;
         case 'left':
@@ -90,7 +93,7 @@ Player.prototype.handleInput = function(input){
                 this.x -= this.stepX;
             break;
         case 'right':
-            if(this.x < C.TILE_W * 4)
+            if(this.x < C.TILE_W * 5)
                 this.x += this.stepX;
             break;
     }
@@ -147,8 +150,8 @@ var Board = function () {
 };
 
 Board.prototype.render = function() {
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0,50, 505, 45);
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0,50, 606, 45);
     this.showLevel();
     this.showScore();
     this.showHearts();
@@ -166,9 +169,9 @@ Board.prototype.updateLevel = function(l) {
 };
 
 Board.prototype.showScore = function() {
-    ctx.font = '1.3em courier';
+    ctx.drawImage(Resources.get('images/Star.png'), 475, 43, 30,50);
     ctx.fillStyle = 'white';
-    ctx.fillText(this.bScore, 420, 80);
+    ctx.fillText(this.bScore, 510, 80);
 };
 
 Board.prototype.updateScore = function(s) {
@@ -178,7 +181,7 @@ Board.prototype.updateScore = function(s) {
 Board.prototype.showHearts = function() {
     ctx.drawImage(Resources.get('images/Heart.png'), 210, 45, 30,50);
     ctx.fillStyle = 'white';
-    ctx.fillText('x'+ this.bHearts, 250, 80);
+    ctx.fillText(this.bHearts, 250, 80);
 };
 
 Board.prototype.updateHearts = function(h) {
@@ -186,9 +189,9 @@ Board.prototype.updateHearts = function(h) {
 };
 
 Board.prototype.showGems = function() {
-    ctx.drawImage(Resources.get('images/gem-orange.png'), 310, 45, 25,40);
+    ctx.drawImage(Resources.get('images/gem-green.png'), 360, 45, 25,40);
     ctx.fillStyle = 'white';
-    ctx.fillText('x'+ this.bGems, 340, 80);
+    ctx.fillText(this.bGems, 400, 80);
 };
 
 Board.prototype.addGem = function () {
@@ -222,8 +225,18 @@ Level.prototype.update = function() {
     board.updateScore(500);
 
     manager.spawnGems(getRandom(2, 4));
-    if(this.level % 4 == 0)
+
+    // add 1 bug every 5 levels
+    if(this.level % 5 == 0)
         manager.spawnEnemies(1);
+
+    // add 1 heart every 6 levels
+    if(this.level % 6 == 0)
+        manager.spawnHeart();
+
+    // add 1 key every 4 levels
+    if(board.bLevel % 4 == 0)
+        manager.spawnKey();
 }
 
 Level.prototype.reset = function() {
@@ -265,6 +278,43 @@ var Modal = function () {
 }
 
 /********************
+ *  class Heart
+ ********************/
+
+var Heart = function (row) {
+    this.sprite = 'images/Heart.png';
+    this.width = C.TILE_W;
+    this.height = C.TILE_H;
+    this.row = row;
+    this.x = C.TILE_W * this.row;
+    this.y = C.TILE_H * this.row + 50;
+}
+
+Heart.prototype.render = function () {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width+10, this.height+15);
+    ctx.strokeRect(this.x, this.y, this.width, this.height);
+}
+
+/********************
+ *  class Key
+ ********************/
+
+var Key = function (row) {
+    this.sprite = 'images/Key.png';
+    this.width = C.TILE_W * 0.7;
+    this.height = C.TILE_H * 0.9;
+    this.row = row;
+    this.x = C.TILE_W + 20;
+    this.y = C.TILE_H * this.row + 55;
+}
+
+Key.prototype.render = function () {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width+10, this.height+15);
+    ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+}
+
+/********************
  *  class Manager, manages enemies and gems
  ********************/
 
@@ -295,9 +345,9 @@ Manager.prototype.spawnEnemies = function (total) {
     // generate an enemy with random position and speed
     for (let i = 0; i < total; i++) {
 
-        var r = getRandom(1, 3);
+        var r = getRandom(2, 4);
 
-        var s = getRandom(50,300);
+        var s = getRandom(50,250);
 
         allEnemies.push(new Enemy(r, s));
       }
@@ -308,7 +358,13 @@ Manager.prototype.resetEnemies = function () {
     allGems = [];
 }
 
+Manager.prototype.spawnHeart = function () {
+    heart = new Heart(getRandom(1, 4));
+}
 
+Manager.prototype.spawnKey = function () {
+    key = new Key(getRandom(4, 6));
+}
 
 document.addEventListener('keyup', function(e) {
     var allowedKeys = {
@@ -331,5 +387,8 @@ var Game = function () {
     manager = new Manager();
     manager.spawnEnemies(1);
     manager.spawnGems(2);
+    // dummy off-canvas objects just for instantiation
+    heart = new Heart(-2);
+    key = new Key(-6);
 }
 Game();
