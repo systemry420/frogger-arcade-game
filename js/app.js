@@ -1,10 +1,11 @@
 /********************
- *  Global variables, constants
+ *  Global variables, constants and helpers
  ********************/
 var allEnemies = [],
     allGems = [],
     player,
     board,
+    modal,
     level,
     manager;
 
@@ -202,6 +203,10 @@ Board.prototype.reset = function() {
 
 };
 
+/********************
+ *  class Level
+ ********************/
+
 var Level = function() {
     this.level = 1;
 };
@@ -217,7 +222,7 @@ Level.prototype.update = function() {
     board.updateScore(500);
 
     manager.spawnGems(getRandom(2, 4));
-    if(this.level % 3 == 0)
+    if(this.level % 4 == 0)
         manager.spawnEnemies(1);
 }
 
@@ -230,6 +235,38 @@ Level.prototype.reset = function() {
     player.reset();
     this.level = 1;
 }
+
+/********************
+ *  class Modal, game over screen
+ ********************/
+
+var Modal = function () {
+    this.element = document.querySelector('.modal');
+
+    this.show = function () {
+        this.element.style.display = 'block';
+        var modalBody = document.querySelector('#modal-body');
+        var msg =  `<h2>Points collected: ${board.bScore} </h2>
+                    <h2>Gems collected: ${board.bGems}</h2>
+                    <h2>Level ${board.bLevel}</h2>`
+
+        modalBody.innerHTML = msg;
+        document.querySelector('#play').addEventListener('click', function () {
+            modal.hide();
+            level.reset();
+            manager.resetEnemies();
+            Game();
+        })
+    }
+
+    this.hide = function () {
+        this.element.style.display = 'none';
+    }
+}
+
+/********************
+ *  class Manager, manages enemies and gems
+ ********************/
 
 var Manager = function() {};
 
@@ -268,6 +305,7 @@ Manager.prototype.spawnEnemies = function (total) {
 
 Manager.prototype.resetEnemies = function () {
     allEnemies = [];
+    allGems = [];
 }
 
 
@@ -287,6 +325,7 @@ document.addEventListener('keyup', function(e) {
 var Game = function () {
     // draw logo
     board = new Board();
+    modal = new Modal();
     level = new Level();
     player = new Player();
     manager = new Manager();

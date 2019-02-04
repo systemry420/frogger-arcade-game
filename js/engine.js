@@ -183,10 +183,10 @@ var Engine = (function(global) {
 
                 }
                 else{
-                    level.reset();
                     player.hearts = 3;
                     manager.resetEnemies();
                     // stop entities, game over
+                    modal.show();
                 }
             }
 
