@@ -22,10 +22,11 @@ var Engine = (function(global) {
         win = global.window,
         canvas = doc.createElement('canvas'),
         ctx = canvas.getContext('2d'),
-        lastTime;
+        lastTime,
+        dt;
 
     canvas.width = 606;
-    canvas.height = 650;
+    canvas.height = 640;
     doc.body.appendChild(canvas);
 
     /* This function serves as the kickoff point for the game loop itself
@@ -38,8 +39,8 @@ var Engine = (function(global) {
          * would be the same for everyone (regardless of how fast their
          * computer is) - hurray time!
          */
-        var now = Date.now(),
-            dt = (now - lastTime) / 1000.0;
+        var now = Date.now();
+        dt = (now - lastTime) / 1000.0;
 
         /* Call our update/render functions, pass along the time delta to
          * our update function since it may be used for smooth animation.
@@ -136,7 +137,7 @@ var Engine = (function(global) {
                  * so that we get the benefits of caching these images, since
                  * we're using them over and over.
                  */
-                ctx.drawImage(Resources.get(rowImages[row]), col * 101, row * 83);
+                ctx.drawImage(Resources.get(rowImages[row]), col * 101, row * 70);
             }
         }
 
@@ -163,11 +164,19 @@ var Engine = (function(global) {
 
         board.render();
 
-        heart.render();
+        if(heart != null)
+            heart.render();
 
-        key.render();
+        if(key != null)
+            key.render();
 
-    }
+        if(rock != null)
+            rock.render();
+
+        if(bullet != null)
+            bullet.render();
+
+        }
 
     function checkCollisions() {
 		function collision(a, b) {
@@ -184,8 +193,7 @@ var Engine = (function(global) {
 
                 if(player.hearts > 1){
                     player.decHeart();
-                    board.updateHearts(player.hearts);
-
+                    board.bHearts = player.hearts;
                 }
                 else{
                     player.hearts = 3;
@@ -206,21 +214,46 @@ var Engine = (function(global) {
             }
         });
 
-        if(collision(player, heart)){
+        if(heart != null){
+            if(collision(player, heart)){
             // add a heart if there's less than 3 hearts
-            heart.x = -200;
-            if(player.hearts>=1 && player.hearts<3){
-                player.incHeart();
-                board.updateHearts(player.hearts);
+                heart = null;
+                if(player.hearts>=1 && player.hearts<3){
+                    player.incHeart();
+                    board.bHearts = player.hearts;
+                }
             }
         }
 
-        if(collision(player, key)){
-            // the key will let the player jump over enemies
-            key.x = -200;
-            player.y = 138;
+        if(key != null){
+            if(collision(player, key)){
+                // the key will let the player jump over enemies
+                key = null;
+                player.y = 125;
+            }
         }
 
+        if(rock != null){
+            if(collision(player, rock)){
+                // add a heart if there's less than 3 hearts
+                rock = null;
+                if(player.rocks>=0 && player.rocks<5){
+                    player.incRock();
+                    board.bRocks = player.rocks;
+                }
+            }
+        }
+
+        if(bullet != null){
+            allEnemies.forEach(function(enemy, i) {
+                if (collision(bullet, enemy)) {
+                    // kill enemy and bullet, update arrays
+                    bullet.die();
+                    allEnemies.splice(i,1);
+                    board.bKills += 1;
+                }
+            });
+        }
 
         // player reaches water
         if (player.y < 70) {
@@ -251,7 +284,13 @@ var Engine = (function(global) {
         'images/gem-blue.png',
         'images/Heart.png',
         'images/Star.png',
-        'images/Key.png'
+        'images/Key.png',
+        'images/Rock.png',
+        'images/Selector.png',
+        'images/char-cat-girl.png',
+        'images/char-horn-girl.png',
+        'images/char-pink-girl.png',
+        'images/char-princess-girl.png'
     ]);
     Resources.onReady(init);
 

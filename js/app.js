@@ -9,15 +9,19 @@ var allEnemies = [],
     level,
     heart,
     key,
+    rock,
+    bullet,
     manager;
 
+    var now;
+    var lastTime;
 
 // object of constants
 var C = {
     TILE_W: 101,
-    TILE_H: 83,
+    TILE_H: 70,
     START_X: 303,
-    START_Y: 553
+    START_Y: 475
 };
 
 // helper function to return random integer
@@ -50,7 +54,7 @@ Enemy.prototype.update = function(dt) {
 };
 
 Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y - this.height -10);
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y - this.height - 20);
     ctx.strokeStyle  = 'red';
     ctx.strokeRect(this.x, this.y, this.width, this.height);
 };
@@ -62,19 +66,25 @@ Enemy.prototype.render = function() {
 var Player = function () {
     this.width = C.TILE_W * 0.9;
     this.height = C.TILE_H;
-    this.x = C.START_X + 10;
+    this.x = C.START_X + 5;
     this.y = C.START_Y;
     this.sprite = 'images/char-boy.png';
     this.stepX = C.TILE_W;
     this.stepY = C.TILE_H;
     this.hearts = 3;
+    this.rocks = 0;
+    this.killed = 0;
 }
 
-Player.prototype.update = function(dt) {
+Player.prototype.update = function() {
+    // I borrowed this to implement a firing function
+    now = Date.now();
+    dt = (now - lastTime) / 1000.0;
+    lastTime = now;
 };
 
 Player.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x - 10, this.y - this.height + 25);
+    ctx.drawImage(Resources.get(this.sprite), this.x - 10, this.y - this.height);
     ctx.strokeRect(this.x, this.y, this.width, this.height); // test borders
 };
 
@@ -96,6 +106,17 @@ Player.prototype.handleInput = function(input){
             if(this.x < C.TILE_W * 5)
                 this.x += this.stepX;
             break;
+        case 'space':
+            if(this.rocks > 0){
+                bullet = new Bullets(this.x, this.y);
+                bullet.shoot();
+                player.rocks -= 1;
+                board.bRocks -= 1;
+            }
+            else
+                board.bRocks = 0;
+            event.preventDefault();
+            break;
     }
 }
 
@@ -107,10 +128,19 @@ Player.prototype.decHeart = function() {
     this.hearts = this.hearts - 1;
 }
 
+Player.prototype.incRock = function () {
+    this.rocks = this.rocks + 1;
+}
+
+Player.prototype.decRock = function() {
+    this.rocks = this.rocks - 1;
+}
+
 // reset player position
 Player.prototype.reset = function() {
     this.x = C.START_X;
     this.y = C.START_Y;
+    this.killed = 0;
 };
 
 /********************
@@ -147,6 +177,8 @@ var Board = function () {
     this.bHearts = 3;
     this.bScore = 0;
     this.bGems = 0;
+    this.bRocks = 0;
+    this.bKills= 0;
 };
 
 Board.prototype.render = function() {
@@ -156,6 +188,7 @@ Board.prototype.render = function() {
     this.showScore();
     this.showHearts();
     this.showGems();
+    this.showRocks();
 };
 
 Board.prototype.showLevel = function() {
@@ -179,31 +212,34 @@ Board.prototype.updateScore = function(s) {
 };
 
 Board.prototype.showHearts = function() {
-    ctx.drawImage(Resources.get('images/Heart.png'), 210, 45, 30,50);
+    ctx.drawImage(Resources.get('images/Heart.png'), 270, 45, 30,50);
     ctx.fillStyle = 'white';
-    ctx.fillText(this.bHearts, 250, 80);
-};
-
-Board.prototype.updateHearts = function(h) {
-    this.bHearts = h;
+    ctx.fillText(this.bHearts, 310, 80);
 };
 
 Board.prototype.showGems = function() {
-    ctx.drawImage(Resources.get('images/gem-green.png'), 360, 45, 25,40);
+    ctx.drawImage(Resources.get('images/gem-green.png'), 370, 45, 25,40);
     ctx.fillStyle = 'white';
-    ctx.fillText(this.bGems, 400, 80);
+    ctx.fillText(this.bGems, 410, 80);
 };
 
 Board.prototype.addGem = function () {
     this.bGems = this.bGems + 1;
 }
 
+Board.prototype.showRocks = function() {
+    ctx.drawImage(Resources.get('images/Rock.png'), 170, 40, 30,50);
+    ctx.fillStyle = 'white';
+    ctx.fillText(this.bRocks, 210, 80);
+};
+
 Board.prototype.reset = function() {
     this.bScore = 0;
+    this.bKills= 0;
     this.bGems = 0;
     this.bLevel = 1;
-    this.updateHearts(3);
-
+    this.bHearts = 3;
+    this.bRocks = 5;
 };
 
 /********************
@@ -226,17 +262,39 @@ Level.prototype.update = function() {
 
     manager.spawnGems(getRandom(2, 4));
 
-    // add 1 bug every 5 levels
+    // add random number of bugs every 5 levels
     if(this.level % 5 == 0)
-        manager.spawnEnemies(1);
+        manager.spawnEnemies(getRandom(1, Math.floor(this.level/10)));
 
     // add 1 heart every 6 levels
-    if(this.level % 6 == 0)
+    if(this.level % 6 == 0){
         manager.spawnHeart();
+        setTimeout(() => {
+            heart = null;
+        }, 6000);
+    }
 
-    // add 1 key every 4 levels
-    if(board.bLevel % 4 == 0)
+    // add 1 key every 5 levels
+    if(board.bLevel % 5 == 0){
         manager.spawnKey();
+        setTimeout(() => {
+            key = null;
+        }, 5000);
+    }
+
+    // add 1 rock every 4 levels
+    if(board.bLevel % 4 == 0){
+        manager.spawnRock();
+        setTimeout(() => {
+            rock = null;
+        }, 4000);
+    }
+
+    // give the ability to fire rocks
+    if(board.bLevel == 10){
+        player.rocks = 5;
+        board.bRocks = 5;
+    }
 }
 
 Level.prototype.reset = function() {
@@ -261,8 +319,8 @@ var Modal = function () {
         var modalBody = document.querySelector('#modal-body');
         var msg =  `<h2>Points collected: ${board.bScore} </h2>
                     <h2>Gems collected: ${board.bGems}</h2>
-                    <h2>Level ${board.bLevel}</h2>`
-
+                    <h2>Level reached: ${board.bLevel}</h2>
+                    <h2>Bugs Killed: ${board.bKills}</h2>`;
         modalBody.innerHTML = msg;
         document.querySelector('#play').addEventListener('click', function () {
             modal.hide();
@@ -311,8 +369,53 @@ var Key = function (row) {
 Key.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width+10, this.height+15);
     ctx.strokeRect(this.x, this.y, this.width, this.height);
+}
+
+/********************
+ *  class Rock, picked up by the Player
+ ********************/
+
+var RockFactory = function (x, y) {
+    this.sprite = 'images/Rock.png';
+    this.width = C.TILE_W * 0.6;
+    this.height = C.TILE_H * 0.9;
+    this.x = x;
+    this.y = y;
+}
+
+RockFactory.prototype.render = function () {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width, this.height);
+    ctx.strokeRect(this.x, this.y, this.width, this.height);
+}
+
+/********************
+ *  class Bullets, represents rocks thrown by Player
+ ********************/
+
+var Bullets = function (x, y) {
+    this.sprite = 'images/Rock.png';
+    this.width = C.TILE_W * 0.6;
+    this.height = C.TILE_H;
+    this.x = x;
+    this.y = y - 10;
+    this.velocity = 500;
+}
+
+Bullets.prototype.render = function () {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width, this.height);
+}
+
+Bullets.prototype.shoot = function () {
+    setInterval(() => {
+        this.x -= dt * this.velocity;
+        ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width, this.height);
+    }, 30);
 
 }
+
+Bullets.prototype.die = function() {
+    this.x = -100;
+};
 
 /********************
  *  class Manager, manages enemies and gems
@@ -321,13 +424,16 @@ Key.prototype.render = function () {
 var Manager = function() {};
 
 Manager.prototype.spawnGems = function(total) {
-    // generate a gem with random position and color
+    // generate a gem with random position and color, and unique points
+
+    if(allGems.length != 0)
+        allGems = [];   // empty this array each time for optimization
 
     var colors = ['blue', 'green', 'orange'];
     var c, p;
 
     for (var i = 0; i < total; i++) {
-        c = colors[getRandom(1,3) - 1] ;
+        c = colors[getRandom(0,2)] ;
         switch(c){
             case 'blue':
                 p = 300; break;
@@ -347,10 +453,17 @@ Manager.prototype.spawnEnemies = function (total) {
 
         var r = getRandom(2, 4);
 
-        var s = getRandom(50,250);
+        var s = getRandom(100,300);
 
         allEnemies.push(new Enemy(r, s));
-      }
+    }
+}
+
+Manager.prototype.spawnRock = function () {
+    var x = C.TILE_W * 5 + 20;
+    var y = C.TILE_H;
+    //always appear at the right-most column
+    rock = new RockFactory(x, y * getRandom(3,6) + 50);
 }
 
 Manager.prototype.resetEnemies = function () {
@@ -371,7 +484,8 @@ document.addEventListener('keyup', function(e) {
         37: 'left',
         38: 'up',
         39: 'right',
-        40: 'down'
+        40: 'down',
+        32: 'space'
     };
 
     player.handleInput(allowedKeys[e.keyCode]);
@@ -387,8 +501,11 @@ var Game = function () {
     manager = new Manager();
     manager.spawnEnemies(1);
     manager.spawnGems(2);
+
     // dummy off-canvas objects just for instantiation
     heart = new Heart(-2);
     key = new Key(-6);
+    rock = new RockFactory(-100, -100)
+    bullet = new Bullets(-100, -100);
 }
 Game();
