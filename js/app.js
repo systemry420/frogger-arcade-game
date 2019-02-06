@@ -11,10 +11,20 @@ var allEnemies = [],
     key,
     rock,
     bullet,
+    msg,
     manager;
 
-    var now;
-    var lastTime;
+var deathSnd,
+    fireSnd,
+    punchSnd,
+    gameoverSnd,
+    heartSnd,
+    rockSnd,
+    winSnd,
+    gemSnd,
+    jumpSnd;
+
+var now, lastTime;
 
 // object of constants
 var C = {
@@ -27,6 +37,24 @@ var C = {
 // helper function to return random integer
 function getRandom(min, max) {
     return Math.floor(min + Math.random()*(max + 1 - min));
+}
+
+// helper function to add sounds effects
+// source: w3schools.com
+function Sound(src) {
+    this.sound = document.createElement("audio");
+    this.sound.src = src;
+    this.sound.setAttribute("preload", "auto");
+    this.sound.setAttribute("controls", "none");
+    this.sound.style.display = "none";
+    this.sound.volume = 0.6;
+    document.body.appendChild(this.sound);
+    this.play = function () {
+        this.sound.play();
+    }
+    this.stop = function () {
+        this.sound.pause();
+    }
 }
 
 /********************
@@ -55,8 +83,6 @@ Enemy.prototype.update = function(dt) {
 
 Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y - this.height - 20);
-    ctx.strokeStyle  = 'red';
-    ctx.strokeRect(this.x, this.y, this.width, this.height);
 };
 
 /********************
@@ -84,8 +110,7 @@ Player.prototype.update = function() {
 };
 
 Player.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x - 10, this.y - this.height);
-    ctx.strokeRect(this.x, this.y, this.width, this.height); // test borders
+    ctx.drawImage(Resources.get(this.sprite), this.x - 5, this.y - this.height);
 };
 
 Player.prototype.handleInput = function(input){
@@ -164,8 +189,6 @@ Gem.prototype.clear = function () {
 
 Gem.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y -33, this.width, this.height+33);
-    ctx.strokeStyle  = 'red';
-    ctx.strokeRect(this.x, this.y, this.width, this.height);
 }
 
 /********************
@@ -291,9 +314,17 @@ Level.prototype.update = function() {
     }
 
     // give the ability to fire rocks
-    if(board.bLevel == 10){
+    if(board.bLevel == 10 || board.bLevel == 45 || board.bLevel == 70){
         player.rocks = 5;
         board.bRocks = 5;
+    }
+
+    if(board.bLevel == 100){
+        msg = '<h2>Congratulations!</h2>';
+        modal.show();
+    }
+    else{
+        msg = '<h2>Hard luck!</h2>';
     }
 }
 
@@ -315,9 +346,14 @@ var Modal = function () {
     this.element = document.querySelector('.modal');
 
     this.show = function () {
+        gameoverSnd.play();
+        allEnemies = [];  // hide entities temporarily
+        allGems.forEach(g => g.x = 1000);
+        player.x = 1000;
+
         this.element.style.display = 'block';
         var modalBody = document.querySelector('#modal-body');
-        var msg =  `<h2>Points collected: ${board.bScore} </h2>
+        msg +=  `<h2>Points collected: ${board.bScore} </h2>
                     <h2>Gems collected: ${board.bGems}</h2>
                     <h2>Level reached: ${board.bLevel}</h2>
                     <h2>Bugs Killed: ${board.bKills}</h2>`;
@@ -350,7 +386,6 @@ var Heart = function (row) {
 
 Heart.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width+10, this.height+15);
-    ctx.strokeRect(this.x, this.y, this.width, this.height);
 }
 
 /********************
@@ -368,7 +403,6 @@ var Key = function (row) {
 
 Key.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width+10, this.height+15);
-    ctx.strokeRect(this.x, this.y, this.width, this.height);
 }
 
 /********************
@@ -378,14 +412,13 @@ Key.prototype.render = function () {
 var RockFactory = function (x, y) {
     this.sprite = 'images/Rock.png';
     this.width = C.TILE_W * 0.6;
-    this.height = C.TILE_H * 0.9;
+    this.height = C.TILE_H * 0.8;
     this.x = x;
-    this.y = y;
+    this.y = y + 10;
 }
 
 RockFactory.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width, this.height);
-    ctx.strokeRect(this.x, this.y, this.width, this.height);
 }
 
 /********************
@@ -398,7 +431,7 @@ var Bullets = function (x, y) {
     this.height = C.TILE_H;
     this.x = x;
     this.y = y - 10;
-    this.velocity = 500;
+    this.velocity = 80;
 }
 
 Bullets.prototype.render = function () {
@@ -406,10 +439,11 @@ Bullets.prototype.render = function () {
 }
 
 Bullets.prototype.shoot = function () {
+    fireSnd.play();
     setInterval(() => {
         this.x -= dt * this.velocity;
         ctx.drawImage(Resources.get(this.sprite), this.x, this.y, this.width, this.height);
-    }, 30);
+    }, dt);
 
 }
 
@@ -443,7 +477,7 @@ Manager.prototype.spawnGems = function(total) {
                 p = 100; break;
         }
 
-        allGems.push(new Gem(c, p, getRandom(1, 3)));
+        allGems.push(new Gem(c, p, getRandom(1, 4)));
     }
 };
 
@@ -507,5 +541,16 @@ var Game = function () {
     key = new Key(-6);
     rock = new RockFactory(-100, -100)
     bullet = new Bullets(-100, -100);
+
+    // sound objects
+    deathSnd = new Sound('../audio/death.wav');
+    fireSnd = new Sound('../audio/fire.wav');
+    punchSnd = new Sound('../audio/punch.mp3');
+    jumpSnd = new Sound('../audio/jump.wav');
+    gameoverSnd = new Sound('../audio/gameover.wav');
+    heartSnd = new Sound('../audio/heart.wav');
+    rockSnd = new Sound('../audio/rock.wav');
+    winSnd = new Sound('../audio/win.wav');
+    gemSnd = new Sound('../audio/gem.wav');
 }
 Game();

@@ -8,22 +8,22 @@ body {
 .modal {
     width: 470px;
     background-color: #444;
-    height: 240px;
+    height: 320px;
     text-align: center;
     z-index: 1;
     padding: 2%;
     position: absolute;
-    top: 300px;
+    top: 210px;
     margin: auto;
     display: none;
     color: #ddd;
     font-family: 'Consolas', 'Courier New', Courier, monospace;
-    box-shadow: 0 0 2px 5px #aaa;
+    box-shadow: 0 0 2px 5px #333;
     border-radius: 10px;
 }
 
 .btn {
-    background: linear-gradient(160deg, #02ccba 0%, #aa7ecd 100%);
+    background: linear-gradient(160deg, #c1f1ed 0%, #271b31 100%);
     color: #1a1a1b;
     border: 0;
     padding: 8px 30px;

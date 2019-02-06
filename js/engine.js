@@ -91,9 +91,11 @@ var Engine = (function(global) {
      * render methods.
      */
     function updateEntities(dt) {
-        allEnemies.forEach(function(enemy) {
-            enemy.update(dt);
-        });
+        if(allEnemies.length > 0){
+            allEnemies.forEach(function(enemy) {
+                enemy.update(dt);
+            });
+        }
 
         player.update();
     }
@@ -160,7 +162,8 @@ var Engine = (function(global) {
             gem.render();
         });
 
-        player.render();
+        if(player != null)
+            player.render();
 
         board.render();
 
@@ -188,6 +191,7 @@ var Engine = (function(global) {
 
         allEnemies.forEach(function(enemy) {
 			if (collision(player, enemy)) {
+                punchSnd.play();
 				player.reset();
                 // update player's hearts
 
@@ -207,6 +211,7 @@ var Engine = (function(global) {
 
         allGems.forEach(function(gem) {
             if (collision(player, gem)) {
+                gemSnd.play();
                 // Update the score, gem, and clear
                 // console.log("collide");
                 board.updateScore(gem.points);
@@ -217,6 +222,7 @@ var Engine = (function(global) {
         if(heart != null){
             if(collision(player, heart)){
             // add a heart if there's less than 3 hearts
+                heartSnd.play();
                 heart = null;
                 if(player.hearts>=1 && player.hearts<3){
                     player.incHeart();
@@ -227,6 +233,7 @@ var Engine = (function(global) {
 
         if(key != null){
             if(collision(player, key)){
+                jumpSnd.play();
                 // the key will let the player jump over enemies
                 key = null;
                 player.y = 125;
@@ -235,6 +242,7 @@ var Engine = (function(global) {
 
         if(rock != null){
             if(collision(player, rock)){
+                rockSnd.play();
                 // add a heart if there's less than 3 hearts
                 rock = null;
                 if(player.rocks>=0 && player.rocks<5){
@@ -247,6 +255,7 @@ var Engine = (function(global) {
         if(bullet != null){
             allEnemies.forEach(function(enemy, i) {
                 if (collision(bullet, enemy)) {
+                    deathSnd.play();
                     // kill enemy and bullet, update arrays
                     bullet.die();
                     allEnemies.splice(i,1);
@@ -257,6 +266,7 @@ var Engine = (function(global) {
 
         // player reaches water
         if (player.y < 70) {
+            winSnd.play();
             level.update();
         }
     }
