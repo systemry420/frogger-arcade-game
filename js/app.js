@@ -26,6 +26,9 @@ var deathSnd,
 
 var now, lastTime;
 
+var btnScore = document.querySelector("#btn-scores");
+btnScore.addEventListener('click', showHighScores);
+
 // object of constants
 var C = {
     TILE_W: 101,
@@ -54,6 +57,62 @@ function Sound(src) {
     }
     this.stop = function () {
         this.sound.pause();
+    }
+}
+
+// show screen of high screens
+function showHighScores() {
+    var txt = '';
+    if(JSON.parse(localStorage.getItem('scores') != null)){
+        txt += '<h2>Recent Highest Scores</h2>';
+        let arr = JSON.parse(localStorage.getItem('scores'));
+        for (let i = 0; i < arr.length; i++) {
+            const a = arr.pop();
+            if(i == 5)
+                break;
+            txt += `<h4>Level: ${a.level} - Points: ${a.points} - Gems: ${a.gems} - Bugs: ${a.bugs} </h4>`;
+        }
+    }
+
+    var sec = document.querySelector('.high-scores');
+    var close = document.createElement('button');
+    close.textContent = 'Close';
+    close.classList.add("btn");
+    close.addEventListener('click', function () {
+        sec.style.display = 'none';
+    });
+    sec.style.display = 'block';
+    sec.innerHTML = txt;
+    sec.appendChild(close);
+}
+
+// save scores into localstorage
+function saveScores(p, g, l, b){
+    // save score as an object
+    let score = {
+        points: p,
+        gems: g,
+        level: l,
+        bugs: b
+    };
+
+    // test if scores is already set
+    if(localStorage.getItem('scores') === null){
+        arrScores = [];
+        arrScores.push(score);
+        localStorage.setItem('scores', JSON.stringify(arrScores));
+    }
+    else{
+        // fetch any found scores, push the current score, and re-store the array
+        try{
+            let res = localStorage.getItem('scores');
+            arrScores = JSON.parse(res);
+        } catch (error){
+            alert(error);
+        }
+
+        arrScores.push(score);
+        localStorage.setItem('scores', JSON.stringify(arrScores));
     }
 }
 
@@ -314,7 +373,7 @@ Level.prototype.update = function() {
     }
 
     // give the ability to fire rocks
-    if(board.bLevel == 10 || board.bLevel == 45 || board.bLevel == 70){
+    if(board.bLevel == 50 || board.bLevel == 65 || board.bLevel == 80 || board.bLevel == 90){
         player.rocks = 5;
         board.bRocks = 5;
     }
@@ -353,11 +412,14 @@ var Modal = function () {
 
         this.element.style.display = 'block';
         var modalBody = document.querySelector('#modal-body');
-        msg +=  `<h2>Points collected: ${board.bScore} </h2>
-                    <h2>Gems collected: ${board.bGems}</h2>
-                    <h2>Level reached: ${board.bLevel}</h2>
-                    <h2>Bugs Killed: ${board.bKills}</h2>`;
+        msg += `<h2>Points collected: ${board.bScore} </h2>
+                <h2>Gems collected: ${board.bGems}</h2>
+                <h2>Level reached: ${board.bLevel}</h2>
+                <h2>Bugs Killed: ${board.bKills}</h2>`;
         modalBody.innerHTML = msg;
+        if(board.bLevel > 50)
+            saveScores(board.bScore, board.bGems, board.bLevel, board.bKills);
+
         document.querySelector('#play').addEventListener('click', function () {
             modal.hide();
             level.reset();

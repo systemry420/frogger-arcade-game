@@ -5,7 +5,7 @@ body {
     justify-content: center;
 }
 
-.modal {
+.modal, .high-scores {
     width: 470px;
     background-color: #444;
     height: 320px;
